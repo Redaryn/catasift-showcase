@@ -1,103 +1,85 @@
 # CataSift
 
-CataSift is a browser-based Shopify CSV validation and preflight application. It helps detect catalog problems before a Shopify CSV import.
+**Shopify CSV validation and preflight, directly in the browser.**
 
-🌐 **Live application:** [https://catasift.com/](https://catasift.com/)
+CataSift helps identify catalog-import problems before a Shopify product CSV reaches a store. It checks file structure, required product information, variants, and potentially risky updates, then presents findings with explanations.
 
-> This repository is a public project showcase. The application source code is maintained privately.
+**[Try the live application](https://catasift.com/validate)** · **[Explore the published checks](https://catasift.com/checks)** · **[Visit CataSift](https://catasift.com/)**
 
-## What It Does
+> **Repository scope:** This is the public project showcase. The application source code is kept in a separate private repository. This repository is not intended to be a runnable source-code release.
 
-CataSift checks Shopify product CSV files before import so catalog issues can be found and reviewed in the browser.
+## The problem
 
-Known functionality includes:
+A Shopify CSV can look fine in a spreadsheet while containing issues that prevent an import or unintentionally change existing store data. Examples include:
 
-- **Shopify CSV structural validation** — inspects whether the file matches expected Shopify CSV structure
-- **Variant and handle consistency checks** — looks for inconsistencies across product variants and handles
-- **Image URL checks** — reviews image URLs in the catalog file
-- **Formatting checks** — flags formatting problems that can interfere with import
-- **Before/after file comparison** — compares files to highlight differences
-- **Corrected CSV export** — exports a corrected CSV where applicable
-- **Reusable validation rules** — applies validation rules that can be reused across files
-- **Supplier profiles** — supports supplier-specific profiles
-- **Batch validation** — validates multiple files in a batch
+- A missing product title on the product's main row.
+- An invalid product status, such as `published` instead of a documented Shopify value.
+- Repeated SKUs, malformed headers, or conflicting variant options.
+- An empty field in an overwrite import that could clear an existing value.
 
-## Why Browser-Based Processing?
+CataSift surfaces findings before the file is imported. It distinguishes documented Shopify requirements from import risks and additional CataSift warnings.
 
-Product CSV files can contain business-sensitive catalog information. CataSift reads and processes those files locally in the browser instead of uploading the full catalog to the backend.
+## What the application does
 
-That approach reduces unnecessary backend transfer and helps keep catalog data on the user’s device. It is a practical design choice, not an absolute privacy or security guarantee.
+### Free validation
 
-## Technology
+- Checks CSV structure, encoding, headers, and product fields.
+- Reviews handles, variants, field values, image URL syntax, and other documented rules.
+- Displays the full list of findings with affected fields and suggested fixes.
+- Provides a basic downloadable issue report.
 
-- JavaScript
-- React
-- HTML/CSS
-- Cloudflare Workers
-- Cloudflare D1
-- Playwright
-- Git
+### Pro workflows
 
-## Architecture Overview
+CataSift also offers paid workflows for:
 
-High-level flow:
+- **Before-and-after comparison:** identify changes between catalog exports and edited files, including potentially destructive blank-field updates.
+- **Corrected CSV export:** download an adjusted file where supported.
+- **Reusable rules and supplier profiles:** apply tailored checks across files.
+- **Batch validation:** review multiple CSV files and consolidated results.
 
-1. The user selects a Shopify CSV.
-2. The browser reads and processes the file locally.
-3. Validation rules inspect the catalog data.
-4. The React UI displays findings.
-5. The user reviews findings and can export corrected data where applicable.
-6. Cloudflare Workers and D1 provide supporting application services (including access/entitlement-related data). Product CSV catalogs are not stored in D1.
+These are separate from the free validator; see the [live product page](https://catasift.com/) for current access and pricing.
+
+## See the workflow
+
+1. Open **[Validate](https://catasift.com/validate)**.
+2. Select a Shopify product CSV, or review the synthetic examples shown on the website.
+3. Review findings by severity, affected field, and recommended action.
+4. Fix issues in the source CSV and validate again before importing to Shopify.
+
+**Example:** A product's main row has an empty `Title` cell. CataSift flags the affected row and explains why a product title is required. Another check distinguishes a *blank* overwrite value from an *omitted column*—a distinction that can matter when updating existing products.
+
+**[See the full validation-rule catalog](https://catasift.com/checks)** for the published checks and their explanations.
+
+## Architecture and design choices
+
+CataSift uses **JavaScript, React, HTML/CSS, Cloudflare Workers, Cloudflare D1, and Playwright**.
+
+- **Browser-side CSV processing:** catalog CSV contents are read and evaluated in the browser instead of being uploaded wholesale to the application backend.
+- **Validation layer:** rules inspect the data and produce findings for the interface to display.
+- **User interface:** React presents the results and supports review and export workflows.
+- **Supporting services:** Cloudflare Workers and D1 handle supporting application functions, including access/entitlement data. Product catalog files are not stored in D1.
 
 ```mermaid
 flowchart LR
-  A[User] --> B[Browser / React UI]
-  B --> C[Local CSV processing]
-  C --> D[Validation rules]
-  D --> B
-  B --> E[Corrected CSV export]
-  B -.-> F[Cloudflare Workers]
-  F --> G[Cloudflare D1]
+  A[Shopify CSV] --> B[Browser / React]
+  B --> C[Local parsing and validation]
+  C --> D[Findings and explanations]
+  D --> E[Review / report]
+  D --> F[Pro comparison and export]
+  B -. Supporting requests .-> G[Cloudflare Workers]
+  G --> H[Cloudflare D1]
 ```
 
-Supporting services run on Cloudflare Workers. D1 holds supporting application data, not product catalogs.
+Processing locally reduces unnecessary transfer of potentially business-sensitive catalog data. It is a design choice, **not** a blanket guarantee of privacy or security.
 
-## Testing
+## Testing and iteration
 
-Playwright is used for browser-level end-to-end testing of key workflows.
+The project has used **Playwright** for browser-level workflow testing in Chromium, Firefox, and WebKit, alongside manual review and debugging. Browser-level tests are relevant here because file selection, validation results, comparison, and export are experienced through the web interface.
 
-Tests have been run across:
+Development has involved iterative changes to data checks, UI behavior, reporting, and supporting services. This showcase describes the product and development areas; it does not claim that every feature was implemented independently without tools or assistance.
 
-- Chromium
-- Firefox
-- WebKit
+## Project status
 
-Browser workflow testing is useful here because the product is a web application: CSV selection, local processing, validation results, comparison, and export all happen in the UI. Checking those paths in multiple engines helps catch issues that unit tests alone would miss.
+The application is available at **[catasift.com](https://catasift.com/)**. The public showcase intentionally excludes the private implementation, customer data, credentials, and internal configuration.
 
-## What I Worked On
-
-As part of this personal project, I have worked on:
-
-- Browser-based CSV processing so catalog files can be validated locally
-- Validation workflows for structure, variants/handles, image URLs, and formatting
-- React UI behavior for reviewing findings
-- Validation and error reporting
-- Corrected CSV export
-- Before/after comparison workflows
-- Supporting services on Cloudflare Workers and D1 (application data and access/entitlement-related functionality, not catalog storage)
-- Cross-browser Playwright testing
-- Debugging and iterative feature development
-
-## Screenshots
-
-<!-- Screenshots will be added here. -->
-
-## Development Approach
-
-CataSift was developed iteratively: build a workflow, test it in the browser, identify issues, debug, and revise.
-
-Development has involved Git-based version control, documentation, browser testing with Playwright, and iterative debugging and refinement.
-
-## Current Status
-
-CataSift is a working web application available at [catasift.com](https://catasift.com/). It remains my primary hands-on software project as I continue expanding its validation workflows, testing, and supporting application features.
+For a quick look at the product, start with the **[live validator](https://catasift.com/validate)** and the **[published rule catalog](https://catasift.com/checks)**.
